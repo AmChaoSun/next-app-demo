@@ -1,6 +1,6 @@
 import { Room, Speaker } from "../../SpeakerData";
-import Image from "next/image";
-import { useContext, useState } from "react";
+import Image, { ImageProps } from "next/image";
+import { useContext, useState, memo } from "react";
 import { SpeakerFilterContext } from "../contexts/SpeakerFilterContext";
 import {
   SpeakerContext,
@@ -41,13 +41,27 @@ const Sessions = () => {
   );
 };
 
+const ImageWithFallback = ({ src, alt, ...props }: ImageProps) => {
+  const [error, setError] = useState(false);
+  const [imgSrc, setImgSrc] = useState(src);
+
+  const onError = () => {
+    if (!error) {
+      setImgSrc("/images/speaker-99999.jpg");
+      setError(true);
+    }
+  };
+
+  return <Image src={imgSrc} alt={alt} {...props} onError={onError} />;
+};
+
 const SpeakerImage = () => {
   const {
     speaker: { id, first, last },
   } = useContext(SpeakerContext);
   return (
     <div className="speaker-img d-flex flex-row justify-content-center align-items-center h-300">
-      <Image
+      <ImageWithFallback
         className="contain-fit"
         width={300}
         height={300}
@@ -121,7 +135,7 @@ interface SpeakerCardProps {
   updateRecord: (speaker: Speaker) => void;
   deleteRecord: (speaker: Speaker) => void;
 }
-const SpeakerCard = ({
+const SpeakerCardWithoutMemo = ({
   speaker,
   updateRecord,
   deleteRecord,
@@ -144,5 +158,14 @@ const SpeakerCard = ({
     </SpeakerContextProvider>
   );
 };
+
+const areEqualSpeaker = (
+  prevProps: SpeakerCardProps,
+  nextProps: SpeakerCardProps
+) => {
+  return prevProps.speaker.favorite === nextProps.speaker.favorite;
+};
+
+const SpeakerCard = memo(SpeakerCardWithoutMemo, areEqualSpeaker);
 
 export default SpeakerCard;
